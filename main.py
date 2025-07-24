@@ -47,7 +47,17 @@ def create_post(player_payload: List[PlayersModel]):
 def list_players():
     return {"players": serialized_stored_players()}
 
-"""
 @app.put("/")
 def update_or_create_players(player_payload: List[PlayersModel]):
-"""
+    global players_store
+
+    for new_player in player_load:
+        found = False
+        for i, existing_player in enumerate(players_store):
+            if new_player.number == existing_player.number:
+                players_store[i] = new_player
+                found = True
+                break
+        if not found:
+            players_store.append(new_player)
+    return {"players": serialized_stored_players()}
