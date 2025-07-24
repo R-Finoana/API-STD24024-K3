@@ -1,20 +1,53 @@
+from typing import List
+
 from fastapi import FastAPI
+from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 app = FastAPI()
 
-@app.get("/")
-def get_info(request: Request):
+@app.get("/hello")
+def get_hello(request: Request):
     accept_headers = request.headers.get("Accept")
-    if accept_headers != "text/html" or accept_headers != "text/html":
-        return JSONResponse({"message": "Unsupported Media Type"}, status_code=415)
-    return JSONResponse(content="HELLO WORLD", status_code=200)
+    if accept_headers != "text/html" and accept_headers != "text/plain":
+        return JSONResponse({"message": "Unsupported Media Type"}, status_code=400)
+    with open("hello.html", "r", encoding="utf-8") as file:
+        html_content = file.read()
+    return Response(content=html_content, status_code=200, media_type="text/html")
 
-@app.post("/")
-def create_post():
-    return {"message":f"Hello"}
+@app.get("/welcome")
+def read_hello(request: Request, name: str= None):
+    accept_headers = request.headers.get("Accept")
+    if accept_headers != "text/plain":
+        return JSONResponse({"message": "Unsupported Media Type"}, status_code=400)
+    if name:
+        return JSONResponse({"message": f"Welcome {name}"}, status_code=200)
+    else:
+        return JSONResponse({"message": f"{name} is undefined"}, status_code=400)
 
+class PlayersModel(BaseModel):
+    number: int
+    name: str
+
+players_store: List[PlayersModel] = []
+
+def serialized_stored_players():
+    players_converted = []
+    for player in players_store:
+        players_converted.append(player.model_dump())
+    return players_converted
+
+@app.post("/players")
+def create_post(player_payload: List[PlayersModel]):
+    players_store.extend(player_payload)
+    return JSONResponse({"player information": serialized_stored_players()}, status_code=201)
+
+@app.get("/players")
+def list_players():
+    return {"players": serialized_stored_players()}
+
+"""
 @app.put("/")
-def put_update():
-    return Response({"message": "Update recorded successfully !"}, status_code=200)
+def update_or_create_players(player_payload: List[PlayersModel]):
+"""
