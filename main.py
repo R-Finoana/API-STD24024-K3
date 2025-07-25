@@ -47,11 +47,11 @@ def create_post(player_payload: List[PlayersModel]):
 def list_players():
     return {"players": serialized_stored_players()}
 
-@app.put("/")
+@app.put("/players")
 def update_or_create_players(player_payload: List[PlayersModel]):
     global players_store
 
-    for new_player in player_load:
+    for new_player in player_payload:
         found = False
         for i, existing_player in enumerate(players_store):
             if new_player.number == existing_player.number:
@@ -61,3 +61,13 @@ def update_or_create_players(player_payload: List[PlayersModel]):
         if not found:
             players_store.append(new_player)
     return {"players": serialized_stored_players()}
+
+@app.get("/players-authorized")
+def give_authorization(request: Request):
+    auth_headers = request.headers.get("Authorization")
+    if not auth_headers :
+        return JSONResponse(content="Unauthorized access to the resources", status_code=401)
+    if auth_headers and auth_headers != "bon courage":
+        return JSONResponse(content="Access permission forbidden", status_code=403)
+    else:
+        return {"players": serialized_stored_players()}
